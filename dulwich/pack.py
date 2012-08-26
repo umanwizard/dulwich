@@ -1038,7 +1038,7 @@ class PackData(object):
             # TODO: clean up asserts and replace with nicer error messages
             assert isinstance(offset, int)
             assert isinstance(delta_offset, int)
-            base_offset = offset-delta_offset
+            base_offset = offset - delta_offset
             type, base_obj = self.get_object_at(base_offset)
             assert isinstance(type, int)
         elif type == REF_DELTA:
