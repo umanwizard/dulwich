@@ -820,7 +820,6 @@ class BaseRepo(object):
         """
         self.object_store = object_store
         self.refs = refs
-
         self.hooks = {}
 
     def _init_files(self, bare):
@@ -1191,11 +1190,14 @@ class BaseRepo(object):
             c.tree = tree
 
         try:
-            self.hooks['pre-commit'].execute() 
-        except HookError, e:
-            raise CommitError(e)
+            hook = self.hooks['pre-commit']
         except KeyError: # no hook defined, silent fallthrough
             pass
+        else:
+            try:
+                hook.execute()
+            except HookError, e:
+                raise CommitError(e)
 
         if merge_heads is None:
             # FIXME: Read merge heads from .git/MERGE_HEADS
@@ -1224,15 +1226,19 @@ class BaseRepo(object):
         if message is None:
             # FIXME: Try to read commit message from .git/MERGE_MSG
             raise ValueError("No commit message specified")
+        c.message = message
 
         try:
-            c.message = self.hooks['commit-msg'].execute(message)
-            if c.message is None:
-                c.message = message
-        except HookError, e:
-            raise CommitError(e)
+            hook = self.hooks['commit-msg']
         except KeyError: # no hook defined, message not modified
             c.message = message
+        else:
+            try:
+                hook_message = hook.execute(c.message)
+                if hook_message is not None:
+                    c.message = hook_message
+            except HookError, e:
+                raise CommitError(e)
 
         try:
             old_head = self.refs[ref]
@@ -1249,11 +1255,14 @@ class BaseRepo(object):
             raise CommitError("%s changed during commit" % (ref,))
 
         try:
-            self.hooks['post-commit'].execute()
-        except HookError, e: # silent failure
-            warnings.warn("post-commit hook failed: %s" % e, UserWarning)
+            hook = self.hooks['post-commit']
         except KeyError: # no hook defined, silent fallthrough
             pass
+        else:
+            try:
+                hook.execute()
+            except HookError, e: # silent failure
+                warnings.warn("post-commit hook failed: %s" % e, UserWarning)
 
         return c.id
 
