@@ -16,22 +16,21 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301, USA.
 
-from dulwich.errors import (
-    MissingCommitError,
-    )
+"""Tests for the MissingObjectFinder in dulwich.object_store."""
+
+
 from dulwich.object_store import (
     MemoryObjectStore,
     )
 from dulwich.objects import (
-    Commit,
     Blob,
     )
 from dulwich.tests import TestCase
 from utils import (
-    F,
     make_object,
     build_commit_graph,
     )
+
 
 class MissingObjectFinderTest(TestCase):
 
@@ -48,13 +47,17 @@ class MissingObjectFinderTest(TestCase):
         return self[n]
 
     def assertMissingMatch(self, haves, wants, expected):
-        for sha,path in self.store.find_missing_objects(haves, wants):
-            self.assertTrue(sha in expected, "FAILURE: (%s,%s) erroneously reported as missing" % (sha,path))
+        for sha, path in self.store.find_missing_objects(haves, wants):
+            self.assertTrue(sha in expected,
+                "FAILURE: (%s,%s) erroneously reported as missing" % (sha, path))
             expected.remove(sha)
 
-        self.assertFalse(len(expected) > 0, "FAILURE: some objects are not reported as missing: %s" % (expected))
+        self.assertFalse(len(expected) > 0,
+            "FAILURE: some objects are not reported as missing: %s" % (expected))
+
 
 class MOFLinearRepoTest(MissingObjectFinderTest):
+
     def setUp(self):
         super(MOFLinearRepoTest, self).setUp()
         f1_1 = make_object(Blob, data='f1') # present in 1, removed in 3
@@ -63,13 +66,15 @@ class MOFLinearRepoTest(MissingObjectFinderTest):
         f2_3 = make_object(Blob, data='f2-changed-again')
         f3_2 = make_object(Blob, data='f3') # added in 2, left unmodified in 3
 
-        commit_spec = [[1], [2,1], [3,2]]
-        trees = {1: [('f1', f1_1), ('f2',f2_1)],
-                2: [('f1',f1_1), ('f2', f2_2), ('f3', f3_2)],
+        commit_spec = [[1], [2, 1], [3, 2]]
+        trees = {1: [('f1', f1_1), ('f2', f2_1)],
+                2: [('f1', f1_1), ('f2', f2_2), ('f3', f3_2)],
                 3: [('f2', f2_3), ('f3', f3_2)] }
         # commit 1: f1 and f2
-        # commit 2: f3 added, f2 changed. Missing shall report commit id and a tree referenced by commit
-        # commit 3: f1 removed, f2 changed. Commit sha and root tree sha shall be reported as modified
+        # commit 2: f3 added, f2 changed. Missing shall report commit id and a
+        #           tree referenced by commit
+        # commit 3: f1 removed, f2 changed. Commit sha and root tree sha shall
+        #           be reported as modified
         self.commits = build_commit_graph(self.store, commit_spec, trees)
         self.missing_1_2 = [self.cmt(2).id, self.cmt(2).tree, f2_2.id, f3_2.id]
         self.missing_2_3 = [self.cmt(3).id, self.cmt(3).tree, f2_3.id]
@@ -78,28 +83,33 @@ class MOFLinearRepoTest(MissingObjectFinderTest):
             self.cmt(2).tree, self.cmt(3).tree,
             f2_2.id, f3_2.id, f2_3.id]
 
-
     def test_1_to_2(self):
-        self.assertMissingMatch([self.cmt(1).id], [self.cmt(2).id], self.missing_1_2)
+        self.assertMissingMatch([self.cmt(1).id], [self.cmt(2).id],
+                self.missing_1_2)
 
     def test_2_to_3(self):
-        self.assertMissingMatch([self.cmt(2).id], [self.cmt(3).id], self.missing_2_3)
+        self.assertMissingMatch([self.cmt(2).id], [self.cmt(3).id],
+                self.missing_2_3)
 
     def test_1_to_3(self):
-        self.assertMissingMatch([self.cmt(1).id], [self.cmt(3).id], self.missing_1_3)
+        self.assertMissingMatch([self.cmt(1).id], [self.cmt(3).id],
+                self.missing_1_3)
 
     def test_bogus_haves(self):
         """Ensure non-existent SHA in haves doesn't break lookup"""
         bogus_sha = self.cmt(2).id[::-1]
-        self.assertMissingMatch([self.cmt(1).id, bogus_sha], [self.cmt(3).id], self.missing_1_3)
+        self.assertMissingMatch([self.cmt(1).id, bogus_sha], [self.cmt(3).id],
+                self.missing_1_3)
 
     def test_bogus_wants(self):
         """Ensure non-existent SHA in wants doesn't break lookup"""
         bogus_sha = self.cmt(2).id[::-1]
-        self.assertMissingMatch([self.cmt(1).id], [self.cmt(3).id, bogus_sha], self.missing_1_3)
+        self.assertMissingMatch([self.cmt(1).id], [self.cmt(3).id, bogus_sha],
+                self.missing_1_3)
 
     def test_no_changes(self):
         self.assertMissingMatch([self.cmt(3).id], [self.cmt(3).id], [])
+
 
 class MOFMergeForkRepoTest(MissingObjectFinderTest):
     """ 1 --- 2 --- 4 --- 6 --- 7
@@ -119,14 +129,14 @@ class MOFMergeForkRepoTest(MissingObjectFinderTest):
         f2_3 = make_object(Blob, data='f2-3')
         f3_3 = make_object(Blob, data='f3')
         f3_5 = make_object(Blob, data='f3-5')
-        commit_spec = [[1], [2,1], [3,2], [4,2], [5,3], [6,3,4], [7,6]]
-        trees = {1: [('f1', f1_1), ('f2',f2_1)],
-                2: [('f1',f1_2), ('f2', f2_1)], # f1 changed
-                3: [('f1',f1_2), ('f2', f2_3), ('f3', f3_3)], # f3 added, f2 changed
-                4: [('f1',f1_4), ('f2',f2_1)],  # f1 changed
-                5: [('f1',f1_2), ('f3', f3_5)], # f2 removed, f3 changed
-                6: [('f1',f1_4), ('f2',f2_3), ('f3', f3_3)], # merged 3 and 4
-                7: [('f1',f1_7), ('f2',f2_3)]} # f1 changed to match rev2. f3 removed
+        commit_spec = [[1], [2, 1], [3, 2], [4, 2], [5, 3], [6, 3, 4], [7, 6]]
+        trees = {1: [('f1', f1_1), ('f2', f2_1)],
+                2: [('f1', f1_2), ('f2', f2_1)], # f1 changed
+                3: [('f1', f1_2), ('f2', f2_3), ('f3', f3_3)], # f3 added, f2 changed
+                4: [('f1', f1_4), ('f2', f2_1)],  # f1 changed
+                5: [('f1', f1_2), ('f3', f3_5)], # f2 removed, f3 changed
+                6: [('f1', f1_4), ('f2', f2_3), ('f3', f3_3)], # merged 3 and 4
+                7: [('f1', f1_7), ('f2', f2_3)]} # f1 changed to match rev2. f3 removed
         self.commits = build_commit_graph(self.store, commit_spec, trees)
 
         self.f1_2_id = f1_2.id
@@ -145,7 +155,8 @@ class MOFMergeForkRepoTest(MissingObjectFinderTest):
           (i.e. in sha_done it records f1_4 as known, and doesn't record f1_2 was known
           prior to that, hence can't detect f1_7 is in fact f1_2 and shall not be reported)
         """
-        self.assertMissingMatch([self.cmt(6).id], [self.cmt(7).id], [self.cmt(7).id, self.cmt(7).tree, self.f1_7_id])
+        self.assertMissingMatch([self.cmt(6).id], [self.cmt(7).id],
+                [self.cmt(7).id, self.cmt(7).tree, self.f1_7_id])
 
     def test_have4_want7(self):
         """
@@ -183,10 +194,10 @@ class MOFMergeForkRepoTest(MissingObjectFinderTest):
           have 5, want 7. Common parent is rev2, hence children of rev2 from
           a descent line other than rev5 shall be reported
         """
-        # expects f1_4 from rev6. f3_5 is known in rev5; 
+        # expects f1_4 from rev6. f3_5 is known in rev5;
         # f1_7 shall be the same as f1_2 (known, too)
         self.assertMissingMatch([self.cmt(5).id], [self.cmt(7).id], [
               self.cmt(7).id, self.cmt(6).id, self.cmt(4).id,
               self.cmt(7).tree, self.cmt(6).tree, self.cmt(4).tree,
-              self.f1_4_id]) 
+              self.f1_4_id])
 

@@ -222,8 +222,9 @@ class BaseObjectStore(object):
             obj = self[sha]
         return obj
 
-    def _collect_ancestors(self, heads, common = set()):
-        """Collect all ancestors of heads up to (excluding) those in common
+    def _collect_ancestors(self, heads, common=set()):
+        """Collect all ancestors of heads up to (excluding) those in common.
+
         :param heads: commits to start from
         :param common: commits to end at, or empty set to walk repository completely
         :return: a tuple (A, B) where A - all commits reachable
@@ -792,19 +793,21 @@ def tree_lookup_path(lookup_obj, root_sha, path):
         raise NotTreeError(root_sha)
     return tree.lookup_path(lookup_obj, path)
 
+
 def _collect_filetree_revs(obj_store, tree_sha, kset):
-    """Collect SHA1s of files and directories for specified tree
-       (identified by SHA1)
+    """Collect SHA1s of files and directories for specified tree.
+
     :param obj_store: Object store to get objects by SHA from
     :param tree_sha: tree reference to walk
     :param kset: set to fill with references to files and directories
     """
     filetree = obj_store[tree_sha]
-    for name,mode,sha in filetree.iteritems():
+    for name, mode, sha in filetree.iteritems():
        if not S_ISGITLINK(mode) and sha not in kset:
            kset.add(sha)
            if stat.S_ISDIR(mode):
                _collect_filetree_revs(obj_store, sha, kset)
+
 
 def _split_commits_and_tags(obj_store, lst):
     """Split lst into two lists, one with commit SHA1s, another with
@@ -829,7 +832,6 @@ def _split_commits_and_tags(obj_store, lst):
                 logging.warning('Not a commit or a tag: %s', e)
         except KeyError as x:
             logging.warning('Missing object in the repository: %s', x)
-            pass
     return (commits, tags)
 
 
