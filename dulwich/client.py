@@ -872,8 +872,9 @@ def get_transport_and_path(uri, **kwargs):
     }
 
     # SSH kwargs
-    ssh_kwargs = {}.update(extra_kwargs)
+    ssh_kwargs = {}
     ssh_kwargs.update(extra_kwargs)
+    ssh_kwargs.update(kwargs)
 
     # TCP
     tcp_kwargs = {
