@@ -44,6 +44,7 @@ import socket
 import subprocess
 import urllib2
 import urlparse
+import warnings
 
 from dulwich.errors import (
     GitProtocolError,
@@ -666,7 +667,7 @@ try:
             self.can_read = lambda: self.channel.recv_ready()
 
         def read(self, n=None):
-            self.channel.recv(n)
+            return self.channel.recv(n)
 
         def close(self):
             self.channel.close()
@@ -684,6 +685,7 @@ try:
 
             return ParamikoWrapper(client, channel)
 except ImportError:
+    warnings.warn('Install to have better SSH support')
     ParamikoSSHVendor = None
 
 # Can be overridden by users
