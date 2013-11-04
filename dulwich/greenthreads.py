@@ -19,6 +19,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301, USA.
 
+"""Utility module for querying an ObjectStore with eventlet."""
+
 import eventlet
 
 from dulwich.objects import (
