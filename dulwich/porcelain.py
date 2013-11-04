@@ -34,12 +34,153 @@ Currently implemented:
  * commit-tree
  * diff-tree
  * init
- * remove
+ * rm 
  * update-server-info
  * symbolic-ref
 
 These functions are meant to behave similarly to the git subcommands.
 Differences in behaviour are considered bugs.
+
+TODO:
+
+ * add--interactive
+ * am
+ * annotate
+ * apply
+ * bisect
+ * bisect--helper
+ * blame
+ * branch
+ * bundle
+ * cat-file
+ * check-attr
+ * check-ignore
+ * check-mailmap
+ * checkout
+ * checkout-index
+ * check-ref-format
+ * cherry
+ * cherry-pick
+ * clean
+ * column
+ * config
+ * count-objects
+ * credential
+ * credential-cache
+ * credential-cache--daemon  remote-fd
+ * credential-store
+ * daemon
+ * describe
+ * diff
+ * diff-files
+ * diff-index
+ * difftool
+ * difftool--helper
+ * diff-tree
+ * fast-export
+ * fast-import
+ * fetch
+ * fetch-pack
+ * filter-branch
+ * fmt-merge-msg
+ * for-each-ref
+ * format-patch
+ * fsck
+ * fsck-objects
+ * gc
+ * get-tar-commit-id
+ * grep
+ * hash-object
+ * help
+ * http-backend
+ * http-fetch
+ * http-push
+ * imap-send
+ * index-pack
+ * init-db
+ * instaweb
+ * log
+ * lost-found
+ * ls-files
+ * ls-remote
+ * ls-tree
+ * mailinfo
+ * mailsplit
+ * merge
+ * merge-base
+ * merge-file
+ * merge-index
+ * merge-octopus
+ * merge-one-file
+ * merge-ours
+ * merge-recursive
+ * merge-resolve
+ * merge-subtree
+ * mergetool
+ * merge-tree
+ * mktag
+ * mktree
+ * mv
+ * name-rev
+ * notes
+ * pack-objects
+ * pack-redundant
+ * pack-refs
+ * patch-id
+ * peek-remote
+ * prune
+ * prune-packed
+ * pull
+ * push
+ * quiltimport
+ * read-tree
+ * rebase
+ * receive-pack
+ * reflog
+ * relink
+ * remote
+ * remote-ext
+ * remote-ftp
+ * remote-ftps
+ * remote-http
+ * remote-https
+ * remote-testsvn
+ * repack
+ * replace
+ * repo-config
+ * request-pull
+ * rerere
+ * reset
+ * revert
+ * rev-list
+ * rev-parse
+ * send-pack
+ * shell
+ * sh-i18n--envsubst
+ * shortlog
+ * show
+ * show-branch
+ * show-index
+ * show-ref
+ * stage
+ * stash
+ * status
+ * stripspace
+ * submodule
+ * tag
+ * tar-tree
+ * unpack-file
+ * unpack-objects
+ * update-index
+ * update-ref
+ * upload-archive
+ * upload-pack
+ * var
+ * verify-pack
+ * verify-tag
+ * web--browse
+ * whatchanged
+ * write-tree
 """
 
 __docformat__ = 'restructuredText'
