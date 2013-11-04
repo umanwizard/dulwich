@@ -63,6 +63,7 @@ from dulwich.object_store import (
     )
 from dulwich.refs import (
     read_info_refs,
+    write_info_refs,
     )
 
 
@@ -115,7 +116,7 @@ def load_conf(path=None, file=None):
 
 
 def catch(func):
-    """Decorator to handle http errors
+    """Decorator to handle http errors.
 
     This decorator handles missing object reported by a 404
     error status from Swift. An exception is raised when an
@@ -147,18 +148,6 @@ def swift_load_pack_index(scon, filename):
         return load_pack_index_file(filename, f)
     finally:
         f.close()
-
-
-def put_info_refs(scon, filename, refs):
-    """Write info/refs file to Swift
-
-    :param scon: a `SwiftConnector` instance
-    :param filename: Path to the index file object
-    """
-    f = StringIO()
-    for refname, sha in refs.iteritems():
-        f.write("%s\t%s\n" % (sha, refname))
-    scon.put_object(filename, f)
 
 
 class SwiftException(Exception):
@@ -620,9 +609,10 @@ class SwiftInfoRefsContainer(InfoRefsContainer):
     """Manage references in info/refs object.
     """
 
-    def __init__(self, scon):
+    def __init__(self, scon, store):
         self.scon = scon
         self.filename = 'info/refs'
+        self.store = store
         f = self.scon.get_object(self.filename)
         if not f:
             f = StringIO('')
@@ -639,6 +629,11 @@ class SwiftInfoRefsContainer(InfoRefsContainer):
                 return False
         return refs
 
+    def _write_refs(self, refs):
+        f = StringIO()
+        f.writelines(write_info_refs(refs, self.store))
+        self.scon.put_object(self.filename, f)
+
     def set_if_equals(self, name, old_ref, new_ref):
         """Set a refname to new_ref only if it currently equals old_ref.
         """
@@ -646,7 +641,7 @@ class SwiftInfoRefsContainer(InfoRefsContainer):
         if not isinstance(refs, dict):
             return False
         refs[name] = new_ref
-        put_info_refs(self.scon, self.filename, refs)
+        self._write_refs(refs)
         self._refs[name] = new_ref
         return True
 
@@ -657,7 +652,7 @@ class SwiftInfoRefsContainer(InfoRefsContainer):
         if not isinstance(refs, dict):
             return False
         del refs[name]
-        put_info_refs(self.scon, self.filename, refs)
+        self._write_refs(refs)
         del self._refs[name]
         return True
 
@@ -686,7 +681,7 @@ class SwiftRepo(BaseRepo):
         self.bare = True
         self._controldir = self.root
         object_store = SwiftObjectStore(self.scon)
-        refs = SwiftInfoRefsContainer(self.scon)
+        refs = SwiftInfoRefsContainer(self.scon, object_store)
         BaseRepo.__init__(self, object_store, refs)
 
     def _put_named_file(self, filename, contents):
@@ -708,8 +703,7 @@ class SwiftRepo(BaseRepo):
         :return: a `SwiftRepo` instance
         """
         scon.create_root()
-        for obj in [posixpath.join(OBJECTDIR, PACKDIR),
-                    posixpath.join(INFODIR, 'refs')]:
+        for obj in [posixpath.join(OBJECTDIR, PACKDIR)]:
             scon.put_object(obj, StringIO(''))
         ret = cls(scon.root, conf)
         ret._init_files(True)
