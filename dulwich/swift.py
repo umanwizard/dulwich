@@ -30,11 +30,12 @@ import posixpath
 from cStringIO import StringIO
 from ConfigParser import ConfigParser
 
-from swiftclient import client
-from swiftclient import ClientException
+from swiftclient import (
+    client,
+    ClientException,
+    )
 
 from dulwich.repo import (
-    InfoRefsContainer,
     BaseRepo,
     OBJECTDIR,
     )
@@ -62,6 +63,7 @@ from dulwich.object_store import (
     MissingObjectFinder,
     )
 from dulwich.refs import (
+    InfoRefsContainer,
     read_info_refs,
     write_info_refs,
     )
