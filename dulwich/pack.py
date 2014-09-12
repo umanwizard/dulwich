@@ -1302,11 +1302,29 @@ class DeltaChainIterator(object):
     def _follow_chain(self, offset, obj_type_num, base_chunks):
         # Unlike PackData.get_object_at, there is no need to cache offsets as
         # this approach by design inflates each object exactly once.
-        unpacked = self._resolve_object(offset, obj_type_num, base_chunks)
-        yield self._result(unpacked)
 
-        pending = chain(self._pending_ofs.pop(unpacked.offset, []),
-                        self._pending_ref.pop(unpacked.sha(), []))
+        current_offset = offset
+        current_obj_type_num = obj_type_num
+        current_base_chunks = base_chunks
+
+        # Proceed iteratively while there is only one link in the chain,
+        # to avoid overflowing the stack or passing Python's
+        # max recursion depth limit.
+        while True:
+            unpacked = self._resolve_object(current_offset, current_obj_type_num, \
+                    current_base_chunks)
+            yield self._result(unpacked)
+
+            pending = self._pending_ofs.pop(unpacked.offset, []) + \
+                            self._pending_ref.pop(unpacked.sha(), [])
+            if len(pending) != 1:
+                break
+            current_offset = pending[0]
+            current_obj_type_num = unpacked.obj_type_num
+            current_base_chunks = unpacked.obj_chunks
+
+
+        # This is a branch point; continue down the chain recursively.
         for new_offset in pending:
             for new_result in self._follow_chain(
               new_offset, unpacked.obj_type_num, unpacked.obj_chunks):
